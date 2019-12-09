@@ -5,16 +5,13 @@ import org.eclipse.paho.client.mqttv3.*;
 
 public class PhidgetPublisher {
 
-    public static final String BROKER_URL = "tcp://iot.eclipse.org:1883";
-    // public static final String BROKER_URL = "tcp://broker.mqttdashboard.com:1883";
+//    public static final String BROKER_URL = "tcp://iot.eclipse.org:1883";
+     public static final String BROKER_URL = "tcp://broker.mqttdashboard.com:1883";
 
     public static final String userid = "16062790"; // change this to be your student-id
     
-    public static final String TOPIC_BRIGHTNESS = userid + "/brightness";
-    public static final String TOPIC_SLIDER     = userid + "/slider";
+    public static final String TOPIC_ROOM_ID	= userid + "/B101";
     public static final String TOPIC_RFID       = userid + "/rfid";
-    public static final String TOPIC_MOTOR		= userid + "/motor";
-    
     public static final String TOPIC_GENERIC    = userid + "/";
 
     private MqttClient client;
@@ -36,31 +33,11 @@ public class PhidgetPublisher {
     }
 
     // Specific publishing methods for particular phidgets
-    public void publishBrightness(int brightnessNumber) throws MqttException {
-        final MqttTopic brightnessTopic = client.getTopic(TOPIC_BRIGHTNESS);
-        final String brigthness = brightnessNumber + "";
-        brightnessTopic.publish(new MqttMessage(brigthness.getBytes()));
-        System.out.println("Published data. Topic: " + brightnessTopic.getName() + "   Message: " + brigthness);
+    public void publishRoomID() throws MqttException {
+    	final MqttTopic motorTopic = client.getTopic(TOPIC_ROOM_ID);
+    	final String roomid = "roomid";
+        System.out.println("Published data. Topic: " + motorTopic.getName() + "   Message: " + roomid);
     }
-    public void publishSlider(double d) throws MqttException {
-        final MqttTopic sliderTopic = client.getTopic(TOPIC_SLIDER);
-        final String slider = d + "";
-        sliderTopic.publish(new MqttMessage(slider.getBytes()));
-        System.out.println("Published data. Topic: " + sliderTopic.getName() + "   Message: " + slider);
-    }
-    public void publishRfid(String rfidTag) throws MqttException {
-        final MqttTopic rfidTopic = client.getTopic(TOPIC_RFID);
-        final String rfid = rfidTag + "";
-        rfidTopic.publish(new MqttMessage(rfid.getBytes()));
-        System.out.println("Published data. Topic: " + rfidTopic.getName() + "   Message: " + rfid);
-    }
-    public void publishMotor() throws MqttException {
-    	final MqttTopic motorTopic = client.getTopic(TOPIC_MOTOR);
-    	final String motor = "motor";
-        System.out.println("Published data. Topic: " + motorTopic.getName() + "   Message: " + motor);
-    }
-
-    
     
     // More generic publishing methods - avoids having to name every one
     public void publishSensor(String sensorValue, String sensorName) throws MqttException {
@@ -77,6 +54,14 @@ public class PhidgetPublisher {
     // same as string publisher, just convert float to String
       publishSensor(String.valueOf(sensorValue), sensorName);
     }
+    
+    public void publishRfid(String rfidTag) throws MqttException {
+        final MqttTopic rfidTopic = client.getTopic(TOPIC_RFID);
+        final String rfid = rfidTag + "";
+        rfidTopic.publish(new MqttMessage(rfid.getBytes()));
+        System.out.println("Published data. Topic: " + rfidTopic.getName() + "   Message: " + rfid);
+    }
+
     
     
 }
