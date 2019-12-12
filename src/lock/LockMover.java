@@ -3,15 +3,13 @@ package lock;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttException;
 
-import org.eclipse.paho.client.mqttv3.MqttException;
-
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import com.phidget22.*;
 import publisher.PhidgetPublisher;
-import reader.RFIDdata;
+import lock.LockData;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -23,7 +21,8 @@ public class LockMover {
 
     public static final String BROKER_URL = "tcp://broker.mqttdashboard.com:1883";
 
-    public static String sensorServerURL = "http://localhost:8081/IOT_Web_Server/ValidateCard";
+    // public static String validateCardServerURL = "http://localhost:8081/IOT_Web_Server/ValidateCard";
+    public static String doorLookupServerURL = "http://localhost:8081/IOT_Web_Server/DoorLookup";
 
     public static final String userid = "16062790"; // change this to be your student-id
 
@@ -46,34 +45,47 @@ public class LockMover {
     }
 
     public void start() {
-        RFIDdata rfidData = new RFIDdata(null, null, null, null);
+        LockData lockData = new LockData(null, null);
         String doorid = "";
         String stringJson = "";
         try {
             doorid = Integer.toString(PhidgetMotorMover.getInstance().getDeviceSerialNumber());
-
-//            rfidData.setDoorid(doorid);
-            stringJson = gson.toJson(rfidData);
+            System.out.println("HWLLOOOOOOOOOOOOo>>>>>> " + doorid);
+            lockData.setDoorid(doorid);
+            stringJson = gson.toJson(lockData);
             System.out.println("sending data: " + stringJson);
-            //sendToServer(stringJson);
+            sendToServer(stringJson);
+
+            String jsonResponse = sendToServer(stringJson);
+
+            System.out.println("TEEEEEEEEEEEEEEEXT >>>>>>>>>>>" + jsonResponse);
+            
+            try {
+                mqttClient.setCallback(new MotorSubscribeCallback());
+                mqttClient.connect();
+                System.out.println("mqtt connected as " + mqttClient.getClientId());
+
+
+                // Person person = g.fromJson("{\"name\": \"John\"}", Person.class);
+                // System.out.println(person.name); //John
+
+                lockData = gson.fromJson(jsonResponse, LockData.class);
+                lockData.setDoorid(doorid);
+                System.out.println("HIIIIIIIII>>>>>J>>>>>>>> " + lockData);
+
+                final String topic = userid + "/" + lockData.getRoomid();
+                mqttClient.subscribe(topic);
+
+                System.out.println("Subscriber is now listening to " + topic);
+
+            } catch (MqttException e) {
+                e.printStackTrace();
+                System.exit(1);
+            }
+
+
         } catch (PhidgetException e1) {
             e1.printStackTrace();
-        }
-
-        try {
-            mqttClient.setCallback(new MotorSubscribeCallback());
-            mqttClient.connect();
-            System.out.println("mqtt connected as " + mqttClient.getClientId());
-
-            final String topic = userid + "/B101";
-            mqttClient.subscribe(topic);
-            System.out.println("motor moving...");
-
-            System.out.println("Subscriber is now listening to " + topic);
-
-        } catch (MqttException e) {
-            e.printStackTrace();
-            System.exit(1);
         }
     }
 
@@ -87,7 +99,7 @@ public class LockMover {
         } catch (UnsupportedEncodingException e1) {
             e1.printStackTrace();
         }
-        String fullURL = sensorServerURL + "?stringJson=" + stringJson;
+        String fullURL = doorLookupServerURL + "?stringJson=" + stringJson;
         System.out.println("Sending data to: " + fullURL); // DEBUG confirmation message
         String line;
         String result = "";
@@ -108,7 +120,6 @@ public class LockMover {
         System.out.println("RESULT: " + result);
         return result;
     }
-
     public static void main(String... args) {
         final LockMover subscriber = new LockMover();
         subscriber.start();
